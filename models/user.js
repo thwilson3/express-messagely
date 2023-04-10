@@ -24,7 +24,7 @@ class User {
                           join_at,
                           last_login_at)
          VALUES
-           ($1, $2, $3, $4, $5, $6, $7)
+           ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
          RETURNING username, password, first_name, last_name, phone`,
 			[
 				username,
@@ -32,8 +32,6 @@ class User {
 				first_name,
 				last_name,
 				phone,
-				new Date(),
-				new Date(),
 			]
 		);
 
@@ -63,10 +61,17 @@ class User {
 	static async updateLoginTimestamp(username) {
 		const result = await db.query(
 			`UPDATE users
-        SET last_login_at = $1
-        WHERE username = $2`,
-			[new Date(), username]
+          SET last_login_at = current_timestamp
+        WHERE username = $1
+    RETURNING username, last_login_at`,
+			[username]
 		);
+
+    const user = result.rows[0]?.username;
+
+    if (!user) {
+			throw new NotFoundError(`No such user ${username}`);
+    }
 
 		console.log('updatelogintimestamp', result.rows[0]);
 	}
@@ -194,7 +199,7 @@ class User {
 				read_at: result.read_at,
 			};
 		});
-  }
+	}
 }
 
 module.exports = User;
