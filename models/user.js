@@ -1,7 +1,7 @@
 "use strict";
 
 const { BCRYPT_WORK_FACTOR } = require("../config");
-const { UnauthorizedError } = require("../expressError");
+const { UnauthorizedError, NotFoundError } = require("../expressError");
 const bcrypt = require("bcrypt");
 const db = require("../db");
 
@@ -19,13 +19,14 @@ class User {
       `INSERT INTO users (username,
                           password,
                           first_name,
-                          last_name, phone,
+                          last_name,
+                          phone,
                           join_at,
                           last_login_at)
          VALUES
            ($1, $2, $3, $4, $5, $6, $7)
          RETURNING username, password, first_name, last_name, phone`,
-      [username, hashedPassword, first_name, last_name, phone, new Date(), null]
+      [username, hashedPassword, first_name, last_name, phone, new Date(), new Date()]
     );
 
     return result.rows[0];
@@ -76,7 +77,28 @@ class User {
    *          join_at,
    *          last_login_at } */
 
-  static async get(username) {}
+  static async get(username) {
+
+    const results = await db.query(
+      `SELECT username,
+              first_name,
+              last_name,
+              phone,
+              join_at,
+              last_login_at
+          FROM users
+          WHERE username = $1`,
+            [username]
+      );
+
+      const user = results.rows[0];
+
+      if(!user){
+        throw new NotFoundError(`No such user ${username}`);
+      };
+
+      return user;
+  }
 
   /** Return messages from this user.
    *
