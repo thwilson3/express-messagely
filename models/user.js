@@ -1,27 +1,32 @@
 "use strict";
 
-const { BCRYPT_WORK_FACTOR } = require('../config');
-const { UnauthorizedError } = require('../expressError');
-const bcrypt = require('bcrypt');
-const db = require('../db');
+const { BCRYPT_WORK_FACTOR } = require("../config");
+const { UnauthorizedError } = require("../expressError");
+const bcrypt = require("bcrypt");
+const db = require("../db");
 
 /** User of the site. */
 
 class User {
-
   /** Register new user. Returns
    *    {username, password, first_name, last_name, phone}
    */
 
   static async register({ username, password, first_name, last_name, phone }) {
-    console.log('BCRYPT_WORK_FACTOR', BCRYPT_WORK_FACTOR);
+    // console.log("BCRYPT_WORK_FACTOR", BCRYPT_WORK_FACTOR);
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
     const result = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
+      `INSERT INTO users (username,
+                          password,
+                          first_name,
+                          last_name, phone,
+                          join_at,
+                          last_login_at)
          VALUES
-           ($1, $2, $3, $4, $5, $6)
+           ($1, $2, $3, $4, $5, $6, $7)
          RETURNING username, password, first_name, last_name, phone`,
-      [username, hashedPassword, first_name, last_name, phone, new Date()]);
+      [username, hashedPassword, first_name, last_name, phone, new Date(), null]
+    );
 
     return result.rows[0];
   }
@@ -30,30 +35,37 @@ class User {
 
   static async authenticate(username, password) {
     const result = await db.query(
-        "SELECT password FROM users WHERE username = $1",
-        [username]);
+      "SELECT password FROM users WHERE username = $1",
+      [username]
+    );
     const user = result.rows[0];
 
     if (user) {
-      if (await bcrypt.compare(password, user.password) === true) {
+      if ((await bcrypt.compare(password, user.password)) === true) {
         return true;
       }
     }
-    console.log('username', username, 'password', password);
-    return false
-    
+    console.log("username", username, "password", password);
+    return false;
   }
 
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) {
+    const result = await db.query(
+      `UPDATE users
+        SET last_login_at = $1
+        WHERE username = $2`,
+      [new Date(), username]
+    );
+
+    console.log("updatelogintimestamp", result.rows[0]);
   }
 
   /** All: basic info on all users:
    * [{username, first_name, last_name}, ...] */
 
-  static async all() {
-  }
+  static async all() {}
 
   /** Get: get user by username
    *
@@ -64,8 +76,7 @@ class User {
    *          join_at,
    *          last_login_at } */
 
-  static async get(username) {
-  }
+  static async get(username) {}
 
   /** Return messages from this user.
    *
@@ -75,8 +86,7 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesFrom(username) {
-  }
+  static async messagesFrom(username) {}
 
   /** Return messages to this user.
    *
@@ -86,9 +96,7 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesTo(username) {
-  }
+  static async messagesTo(username) {}
 }
-
 
 module.exports = User;
