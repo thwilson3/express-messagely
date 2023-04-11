@@ -21,10 +21,16 @@ const router = new Router();
  **/
 
 router.get('/:id', ensureLoggedIn, async function (req, res, next) {
-	try {
-		const message = await Message.get(req.params.id);
 
-    return res.json({ message });
+  const username = res.locals.user.username;
+
+  try {
+		const message = await Message.get(req.params.id);
+    if(username === message.from_user.username || username === message.to_user.username){
+      return res.json({ message });
+    } else {
+      throw new UnauthorizedError("Halt there");
+    }
 	} catch (error) {
 		console.warn(error);
 
