@@ -62,9 +62,6 @@ router.post('/:id/read', async function (req, res, next) {
   const fullMsg = await Message.get(id)
   const to_username = res.locals.user.username;
 
-  console.log("FULL-MSG ======", fullMsg);
-  console.log("to_username =======", to_username);
-
   try{
     if(to_username === fullMsg.to_user.username){
       const message = await Message.markRead(id)
