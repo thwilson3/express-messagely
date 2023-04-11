@@ -47,6 +47,8 @@ class User {
 		);
 		const user = result.rows[0];
 
+    console.log("user inside user.auth method", user);
+
 		if (user) {
 			if ((await bcrypt.compare(password, user.password)) === true) {
 				return true;
