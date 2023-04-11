@@ -1,6 +1,9 @@
-"use strict";
+'use strict';
 
-const Router = require("express").Router;
+const Message = require('../models/message');
+const { authenticateJWT, ensureLoggedIn } = require('../middleware/auth');
+
+const Router = require('express').Router;
 const router = new Router();
 
 /** GET /:id - get detail of message.
@@ -16,6 +19,16 @@ const router = new Router();
  *
  **/
 
+router.get('/:id', ensureLoggedIn, async function (req, res, next) {
+	try {
+		const message = await Message.get(req.params.id);
+
+    return res.json({ message });
+	} catch (error) {
+		console.warn(error);
+
+	}
+});
 
 /** POST / - post message.
  *
@@ -24,6 +37,15 @@ const router = new Router();
  *
  **/
 
+router.post('/', ensureLoggedIn,  async function (req, res, next) {
+  if (req.body === undefined) throw new BadRequestError();
+
+  const { to_username, body } = req.body;
+  const from_username = res.locals.user.username;
+  const message = await Message.create({from_username, to_username, body});
+
+  return res.json( {message} );
+});
 
 /** POST/:id/read - mark message as read:
  *
@@ -33,5 +55,5 @@ const router = new Router();
  *
  **/
 
-
 module.exports = router;
+
