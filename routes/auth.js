@@ -15,12 +15,13 @@ router.post("/login", async function (req, res, next) {
   if (req.body === undefined) throw new BadRequestError();
   const { username, password } = req.body;
 
-  // const answer = await User.authenticate(username, password)
-  console.log("user auth inside post", answer);
   if (await User.authenticate(username, password) === true) {
+
     const token = jwt.sign({ username }, SECRET_KEY);
     console.log("token", token);
-    return { token };
+
+    return res.json({ token });
+
   } else {
     throw new UnauthorizedError("Invalid username/password");
   }
@@ -30,5 +31,15 @@ router.post("/login", async function (req, res, next) {
  *
  * {username, password, first_name, last_name, phone} => {token}.
  */
+
+router.post('/register', async function (req, res, next) {
+  if (req.body === undefined) throw new BadRequestError();
+
+  const result = await User.register(req.body);
+  const token = jwt.sign({ username: result.username }, SECRET_KEY);
+
+  return res.json({ token });
+
+});
 
 module.exports = router;
