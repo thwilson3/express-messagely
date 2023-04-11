@@ -2,6 +2,7 @@
 
 const Message = require('../models/message');
 const { authenticateJWT, ensureLoggedIn } = require('../middleware/auth');
+const { UnauthorizedError } = require('../expressError');
 
 const Router = require('express').Router;
 const router = new Router();
@@ -51,9 +52,29 @@ router.post('/', ensureLoggedIn,  async function (req, res, next) {
  *
  *  => {message: {id, read_at}}
  *
- * Makes sure that the only the intended recipient can mark as read.
+ * Makes sure that only the intended recipient can mark as read.
  *
  **/
+
+router.post('/:id/read', async function (req, res, next) {
+
+  const id = req.params.id
+  const fullMsg = await Message.get(id)
+  const to_username = res.locals.user.username;
+
+  console.log("FULL-MSG ======", fullMsg);
+  console.log("to_username =======", to_username);
+
+  try{
+    if(to_username === fullMsg.to_user.username){
+      const message = await Message.markRead(id)
+      return res.json({ message })
+    }
+  } catch(err) {
+    throw new UnauthorizedError(`You're not allow to do this action.`);
+  }
+
+});
 
 module.exports = router;
 
